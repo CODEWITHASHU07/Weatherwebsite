@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=0.5" />
+    <link rel="stylesheet" href="./index.css" />
+    <title>Document</title>
+  </head>
+  <body>
+    <video
+      src="https://media.istockphoto.com/id/1438586407/video/christmas-tree-with-snowfall-christmas-background-loopable.mp4?s=mp4-640x640-is&k=20&c=2T32Su7GigvvdrDUS5xRsIHRGi9MLPMbFkIAvIFGbJY="
+      loop
+      autoplay
+    ></video>
+    <div id="Box">
+      <div id="Search">
+        <input type="text" id="Searchvalue" /><span
+          id="icon"
+          onclick="searchcity()"
+          ><img src="./magnifying-glass.png" alt=""
+        /></span>
+      </div>
+      <div id="CityName">
+        <div id="currentNAME"><h3>City Details</h3></div>
+        <div id="Code"></div>
+      </div>
+      <div>
+        <h3>Temprature:</h3>
+        <span id="Temp"></span>
+      </div>
+      <div>
+        <h3>Discription :</h3>
+        <span id="disc"></span>
+      </div>
+      <div id="more">
+        <div class="more">SunRise <br /><span class="morecontent"></span></div>
+        <div class="more">Sunset <br /><span class="morecontent"></span></div>
+        <div class="more">Wind<br /><span class="morecontent"></span></div>
+        <div class="more">Cloud <br /><span class="morecontent"></span></div>
+        <div class="more">MinTemp <br /><span class="morecontent"></span></div>
+        <div class="more">MaxTemp <br /><span class="morecontent"></span></div>
+      </div>
+    </div>
+  </body>
+  <script>
+    let jsonformat1 = {};
+    let SearchText = document.getElementById("Searchvalue");
+    let Address = document.getElementById("Code");
+    let Temp = document.getElementById("Temp");
+    let Disc = document.getElementById("disc");
+    let Block = document.querySelectorAll(".morecontent");
+    let sunrise = 0;
+    let sunset = 0;
+    function display(
+      name,
+      address,
+      temp,
+      discription,
+      sunrise,
+      sunset,
+      wind,
+      main
+    ) {
+      Address.innerText = `${name}-${address}`;
+      Temp.innerText = `${temp} °C`;
+      Disc.innerText = discription;
+      Block[0].innerText = sunrise;
+      Block[1].innerText = sunset;
+      Block[2].innerText = `Speed:${wind.speed}\n &\ndeg:${wind.deg}`;
+      Block[3].innerText = `Pressure${main.pressure}\n&\nHumidity${main.humidity}`;
+      Block[4].innerText = parseFloat(main.temp_min.toFixed(2));
+      Block[5].innerText = parseFloat(main.temp_max.toFixed(2));
+    }
+
+    function currectdate(date) {
+      let timestamp = date;
+      let newdate = new Date(timestamp * 1000); // JavaScript expects the timestamp in milliseconds, so multiply by 1000
+      // Get the components of the date
+      let year = newdate.getFullYear();
+      let month = newdate.getMonth() + 1; // Months are zero-based, so add 1
+      let day = newdate.getDate();
+      let hours = newdate.getHours();
+      let minutes = newdate.getMinutes();
+      let seconds = newdate.getSeconds();
+
+      // Format the date and time as a string
+      var formattedDate =
+        addLeadingZero(day) +
+        "-" +
+        addLeadingZero(month) +
+        "-" +
+        year +
+        "\n" +
+        "Time-" +
+        addLeadingZero(hours) +
+        ":" +
+        addLeadingZero(minutes);
+
+      function addLeadingZero(number) {
+        if (number < 10) {
+          return "0" + number;
+        } else {
+          return number;
+        }
+      }
+      return formattedDate;
+    }
+
+    function getdat(Cityname) {
+      return fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${Cityname}&appid=a2b683908984fe4ab73da938b35eaa99`
+      );
+    }
+
+    function searchcity() {
+      getdat(SearchText.value)
+        .then((response) => {
+          return response.json();
+        })
+        .then((result) => {
+          jsonformat1 = result;
+
+          return fetch(
+            `https://geocode.maps.co/reverse?lat=${jsonformat1.coord.lat}&lon=${jsonformat1.coord.lon}`
+          );
+        })
+        .then((response) => {
+          return response.json();
+        })
+        .then((responsenew) => {
+          let update = responsenew;
+          let Itemsnew = Object.entries(update.address);
+          sunrise = currectdate(jsonformat1.sys.sunrise);
+          sunset = currectdate(jsonformat1.sys.sunset);
+          let addressupdate = "";
+          for (let i of Itemsnew) {
+            addressupdate += `${i[0]}:${i[1]},`;
+          }
+          return addressupdate;
+        })
+        .then((result) => {
+          let temprature = parseFloat((jsonformat1.main.temp - 273).toFixed(2));
+          display(
+            jsonformat1.name,
+            result,
+            temprature,
+            jsonformat1.weather[0].description,
+            sunrise,
+            sunset,
+            jsonformat1.wind,
+            jsonformat1.main
+          );
+          return "good";
+        })
+        .then(() => {
+          console.log("done");
+        })
+        .catch(() => {
+          alert("Sorry their might be soemtechnical Errors");
+        });
+    }
+  </script>
+</html>
